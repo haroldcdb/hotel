@@ -1,0 +1,707 @@
+<template>
+  <div class="container h-100">
+    <v-tabs color="blue" center-active centered class="mb-5">
+      <v-tab @click="cambiarPersona(true)">Persona física</v-tab>
+      <v-tab @click="cambiarPersona(false)">Persona jurídica</v-tab>
+    </v-tabs>
+
+    <div v-show="mostrarElem">
+      <v-row class="d-flex justify-content-center">
+        <img
+          id="foto_usuario"
+          class="foto_usuario"
+          src="https://res.cloudinary.com/harold23/image/upload/v1602794744/gqngnkdynbl7tqnudxyu.png"
+        />
+      </v-row>
+      <v-row class="d-flex justify-content-center">
+        <v-chip small class="btn_subirFoto mt-1" @click="subirFoto"
+          >Subir foto
+        </v-chip>
+        <input type="file" id="input_subirFoto" hidden />
+      </v-row>
+    </div>
+
+    <validation-observer ref="observador">
+      <!-- Nombre y apellido -->
+      <validation-provider v-slot="{ errors }" name="nombre" rules="requerido">
+        <v-text-field
+          v-model="nombre"
+          class="form-input"
+          label="Nombre"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          color="blue"
+          dense
+          outlined
+        ></v-text-field>
+      </validation-provider>
+
+      <validation-provider
+        v-slot="{ errors }"
+        name="apellidos"
+        rules="requerido"
+      >
+        <v-text-field
+          v-show="mostrarElem"
+          v-model="apellidos"
+          class="form-input"
+          label="Apellidos"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          color="blue"
+          dense
+          outlined
+        ></v-text-field>
+      </validation-provider>
+
+      <!-- Correo -->
+      <validation-provider
+        v-slot="{ errors }"
+        name="correo"
+        rules="requerido|correo"
+      >
+        <v-text-field
+          v-model="correo"
+          class="form-input"
+          label="Correo electrónico"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          color="blue"
+          dense
+          outlined
+        ></v-text-field>
+      </validation-provider>
+
+      <!-- Contraseña -->
+      <validation-provider
+        v-slot="{ errors }"
+        name="contraseña"
+        rules="requerido|min:8"
+      >
+        <v-text-field
+          v-model="contrasena"
+          label="Contraseña"
+          required
+          :error-messages="errors"
+          :append-icon="mostrarContrasena ? 'fas fa-eye' : 'fas fa-eye-slash'"
+          :type="mostrarContrasena ? 'text' : 'password'"
+          @click:append="mostrarContrasena = !mostrarContrasena"
+          hide-details="auto"
+          color="blue"
+          dense
+          outlined
+        ></v-text-field>
+      </validation-provider>
+
+      <validation-provider
+        v-slot="{ errors }"
+        name="confirmación"
+        rules="requerido|confirmacion:@contraseña"
+      >
+        <v-text-field
+          v-model="confirmacion"
+          label="Confirmación"
+          required
+          :error-messages="errors"
+          :type="mostrarContrasena ? 'text' : 'password'"
+          @click:append="mostrarContrasena = !mostrarContrasena"
+          hide-details="auto"
+          color="blue"
+          dense
+          outlined
+        ></v-text-field>
+      </validation-provider>
+
+      <!-- Identificación -->
+      <validation-provider
+        v-slot="{ errors }"
+        name="identificación"
+        rules="requerido"
+      >
+        <v-text-field
+          v-model="identificacion"
+          class="form-input"
+          label="Identificación"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          color="blue"
+          dense
+          outlined
+        ></v-text-field>
+      </validation-provider>
+
+      <!-- Fecha -->
+      <v-menu
+        v-model="menuFecha"
+        :close-on-content-click="false"
+        :nudge-right="40"
+        transition="scale-transition"
+        offset-y
+        min-width="290px"
+      >
+        <template v-slot:activator="{ on, attrs }">
+          <validation-provider
+            v-slot="{ errors }"
+            name="fecha"
+            rules="requerido|validarFecha:@edad"
+          >
+            <v-text-field
+              v-show="mostrarElem"
+              v-model="fechaNacimiento"
+              label="Fecha de nacimiento"
+              required
+              :error-messages="errors"
+              readonly
+              v-bind="attrs"
+              v-on="on"
+              hide-details="auto"
+              color="blue"
+              dense
+              outlined
+            ></v-text-field>
+          </validation-provider>
+        </template>
+        <v-date-picker
+          v-model="fechaNacimiento"
+          @input="calcEdad"
+          :max="fechaLimite()"
+          no-title
+          color="blue"
+        ></v-date-picker>
+      </v-menu>
+
+      <validation-provider name="edad">
+        <v-text-field
+          v-show="mostrarElem"
+          v-model="edad"
+          hide-details="auto"
+          class="form-input"
+          label="Edad (+18)"
+          color="blue"
+          dense
+          outlined
+          readonly
+        ></v-text-field>
+      </validation-provider>
+      <!-- Género -->
+      <v-radio-group
+        v-show="mostrarElem"
+        v-model="genero"
+        row
+        label="Género"
+        :mandatory="true"
+        hide-details="auto"
+        class="m-0"
+      >
+        <v-radio
+          v-for="item in generos"
+          :key="item"
+          :label="item"
+          :value="item"
+          color="blue"
+        ></v-radio>
+      </v-radio-group>
+
+      <!-- PCD -->
+      <validation-provider
+        v-slot="{ errors }"
+        name="provincia"
+        rules="requerido"
+      >
+        <v-select
+          v-model="provincia"
+          label="Provincia"
+          class="form-input"
+          :items="listaProvincias"
+          @change="llenarCantones"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          dense
+          outlined
+          color="blue"
+        ></v-select>
+      </validation-provider>
+
+      <validation-provider v-slot="{ errors }" name="cantón" rules="requerido">
+        <v-select
+          v-model="canton"
+          label="Cantón"
+          class="form-input"
+          :items="listaCantones"
+          @change="llenarDistritos"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          dense
+          outlined
+          color="blue"
+        ></v-select>
+      </validation-provider>
+
+      <validation-provider
+        v-slot="{ errors }"
+        name="distrito"
+        rules="requerido"
+      >
+        <v-select
+          v-model="distrito"
+          label="Distrito"
+          class="form-input"
+          :items="listaDistritos"
+          required
+          :error-messages="errors"
+          hide-details="auto"
+          dense
+          outlined
+          color="blue"
+        ></v-select>
+      </validation-provider>
+      <!-- Direccion -->
+      <validation-provider
+        v-slot="{ errors }"
+        name="dirección"
+        rules="requerido"
+      >
+        <v-textarea
+          v-model="direccion"
+          label="Dirección física"
+          class="form-input"
+          required
+          :error-messages="errors"
+          auto-grow
+          rows="1"
+          row-height="15"
+          hide-details="auto"
+          outlined
+          dense
+          color="blue"
+        ></v-textarea>
+      </validation-provider>
+      <!-- Mapa -->
+      <gmap-autocomplete
+        class="pl-2 gmap-autocomplete"
+        @place_changed="establecerMarcador"
+        placeholder="Busca tu ciudad"
+      >
+      </gmap-autocomplete>
+      <div id="map-container">
+        <gmap-map
+          :center="centro"
+          :zoom="12"
+          style="width: 100%; height: 250px"
+        >
+          <gmap-marker
+            @dragend="obtenerCoord"
+            :position="marcador"
+            :animation="4"
+            draggable
+          >
+          </gmap-marker>
+        </gmap-map>
+      </div>
+
+      <div class="v-text-field__details mt-1" v-if="msjErrMap">
+        <div class="v-messages theme--light error--text" role="alert">
+          <div class="v-messages__wrapper">
+            <div class="v-messages__message">
+              Debes de elegir un lugar en el mapa
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <v-divider></v-divider>
+
+      <!-- Telefono -->
+      <validation-provider
+        v-slot="{ errors }"
+        name="teléfono"
+        rules="requerido"
+      >
+        <v-combobox
+          v-model="telefono"
+          id="telefono"
+          class="form-input"
+          label="Teléfono (máximo 4)"
+          required
+          :error-messages="errors"
+          multiple
+          append-icon
+          chips
+          hide-details="auto"
+          deletable-chips
+          @click="revisarLimite"
+          @keyup.enter="revisarLimite"
+          color="blue"
+          outlined
+          dense
+        ></v-combobox>
+      </validation-provider>
+    </validation-observer>
+
+    <v-btn class="blue white--text" @click="registrarHotelero">
+      Registrarse
+    </v-btn>
+  </div>
+</template>
+
+
+<script>
+import provinciaApi from "../api/provincias";
+import cantonApi from "../api/cantones";
+import distritoApi from "../api/distritos";
+
+import usuarioController from "../controllers/usuario.js";
+
+import { required, email } from "vee-validate/dist/rules";
+import {
+  extend,
+  ValidationObserver,
+  ValidationProvider,
+  setInteractionMode,
+} from "vee-validate";
+
+setInteractionMode("eager");
+
+extend("requerido", {
+  ...required,
+  message: "El campo {_field_} es requerido",
+});
+extend("correo", { ...email, message: "Formato de correo inválido" });
+extend("confirmacion", {
+  validate(val, { contrasena }) {
+    return val == contrasena;
+  },
+  params: ["contrasena"],
+  message: "La confirmación no coincide con la contraseña",
+});
+extend("validarFecha", {
+  validate(val, { edad }) {
+    return edad.length != 0;
+  },
+  params: ["edad"],
+  message: "El campo fecha de nacimiento es requerido",
+});
+extend("min", {
+  validate(val, { min }) {
+    return val.length >= min;
+  },
+  params: ["min"],
+  message: "Utiliza mínimo {min} caracteres",
+});
+
+export default {
+  name: "RegistrarUsuario",
+  components: {
+    ValidationProvider,
+    ValidationObserver,
+  },
+  data() {
+    const hoy = new Date();
+
+    return {
+      identificacion: "",
+      nombre: "",
+      apellidos: "",
+      correo: "",
+      contrasena: "",
+      confirmacion: "",
+      fechaNacimiento: [
+        hoy.getFullYear() - 18,
+        (hoy.getMonth() + 1).toString().padStart(2, "0"),
+        hoy.getDate().toString().padStart(2, "0"),
+      ].join("-"),
+      edad: "",
+      genero: "",
+      foto: "",
+      provincia: "",
+      canton: "",
+      distrito: "",
+      direccion: "",
+      telefono: [],
+
+      // Address
+      listaProvincias: provinciaApi.provincias.map((a) => a.nombre),
+      listaCantones: [],
+      listaDistritos: [],
+
+      // Map
+      centro: {},
+      marcador: {},
+      msjErrMap: false,
+      marcadorDragged: false,
+
+      mostrarContrasena: false,
+      menuFecha: false,
+      generos: ["Masculino", "Femenino", "Otro"],
+      stepper: 1,
+      mostrarElem: true,
+
+      errors: null,
+    };
+  },
+
+  beforeMount() {
+    this.$store.state.btn = false;
+    this.$store.state.footer = true;
+    this.$store.state.redireccion = "LandingPage";
+  },
+
+  mounted() {
+    this.posicionActual();
+  },
+
+  methods: {
+    registrarHotelero() {
+      this.foto = document.getElementById("foto_usuario").src;
+      let listaTelefonos = [];
+
+      this.telefono.forEach((telefono) =>
+        listaTelefonos.push(new Object({ telefono }))
+      );
+
+      this.$refs.observador.validate().then((response) => {
+        if (response && this.marcadorDragged) {
+          // let usuario = usuarioController.registrarUsuario(
+          //   this.identificacion,
+          //   this.nombre,
+          //   this.apellidos,
+          //   this.correo,
+          //   this.contrasena,
+          //   this.fechaNacimiento,
+          //   this.genero,
+          //   this.foto,
+          //   this.provincia,
+          //   this.canton,
+          //   this.distrito,
+          //   this.direccion,
+          //   this.marcador.lat,
+          //   this.marcador.lng,
+          //   listaTelefonos,
+          //   "hotelero",
+          //   "pendiente",
+          //   [{ permiso: "1" }, { permiso: "2" }]
+          // );
+        } else if (!this.marcadorDragged) {
+          this.msjErrMap = true;
+          document.getElementById("map-container").classList.add("errorMapa");
+        }
+      });
+    },
+
+    cambiarPersona(bool) {
+      this.$refs.observador.reset();
+      this.mostrarElem = bool;
+
+      document.getElementById("map-container").classList.remove("errorMapa");
+      this.msjErrMap = false;
+      this.marcadorDragged = false;
+      this.posicionActual();
+
+      const hoy = new Date();
+
+      this.identificacion = "";
+      this.nombre = "";
+      this.apellidos = "";
+      this.correo = "";
+      this.contrasena = "";
+      this.fechaNacimiento = [
+        hoy.getFullYear() - 18,
+        (hoy.getMonth() + 1).toString().padStart(2, "0"),
+        hoy.getDate().toString().padStart(2, "0"),
+      ].join("-");
+      this.genero = "Masculino";
+      this.edad = "";
+      this.provincia = "";
+      this.canton = "";
+      this.distrito = "";
+      this.direccion = "";
+      this.marcador.lat = "";
+      this.marcador.lng = "";
+      this.telefono = [];
+
+      if (!this.mostrarElem) {
+        this.fechaNacimiento = [
+          hoy.getFullYear() - 18,
+          (hoy.getMonth() + 1).toString().padStart(2, "0"),
+          hoy.getDate().toString().padStart(2, "0"),
+        ].join("-");
+        this.edad = 18;
+        this.genero = "Otro";
+      }
+    },
+
+    fechaLimite() {
+      const hoy = new Date();
+      return;
+      [
+        hoy.getFullYear() - 18,
+        (hoy.getMonth() + 1).toString().padStart(2, "0"),
+        hoy.getDate().toString().padStart(2, "0"),
+      ].join("-");
+    },
+
+    calcEdad() {
+      const hoy = new Date();
+      const anoActual = hoy.getFullYear();
+      const mesActual = hoy.getMonth();
+      const diaActual = hoy.getDate();
+
+      const nacimiento = new Date(this.fechaNacimiento);
+      const anoNacimiento = nacimiento.getFullYear();
+      const mesNacimiento = nacimiento.getMonth();
+      const diaNacimiento = nacimiento.getDate();
+
+      let edad = anoActual - anoNacimiento;
+
+      if (mesNacimiento > mesActual) {
+        edad--;
+      } else if (mesNacimiento == mesActual && diaActual < diaNacimiento) {
+        edad--;
+      }
+
+      this.edad = edad;
+    },
+
+    llenarCantones() {
+      let provinciaSeleccionda = this.provincia;
+
+      let provincia = provinciaApi.provincias.filter((item) => {
+        return item.nombre === provinciaSeleccionda;
+      });
+      let lista = cantonApi.cantones.filter((item) => {
+        return item.idProvincia === provincia[0].idProvincia;
+      });
+
+      this.listaCantones = lista.map((value) => value.nombre);
+      this.canton = "";
+    },
+
+    llenarDistritos() {
+      let cantonSeleccionado = this.canton;
+
+      let canton = cantonApi.cantones.filter(function (item) {
+        return item.nombre === cantonSeleccionado;
+      });
+      let lista = distritoApi.distritos.filter(function (item) {
+        return item.idCanton === canton[0].idCanton;
+      });
+
+      this.listaDistritos = lista.map((value) => value.nombre);
+      this.distrito = "";
+    },
+
+    revisarLimite() {
+      if (this.telefono.length == 4) {
+        document.getElementById("telefono").setAttribute("readonly", true);
+      } else if (this.telefono.length >= 0) {
+        document.getElementById("telefono").removeAttribute("readonly");
+      }
+    },
+
+    subirFoto() {
+      let inputSubirFoto = document.getElementById("input_subirFoto");
+      let fotoContainer = document.getElementById("foto_usuario");
+
+      const cloudName = "harold23";
+      const unsignedUploadPreset = "harold23";
+      let archivo = "";
+
+      inputSubirFoto.click();
+
+      inputSubirFoto.addEventListener("change", () => {
+        archivo = inputSubirFoto.files[0];
+        if (archivo != null) {
+          let url = `https://api.cloudinary.com/v1_1/${cloudName}/upload`;
+          let xhr = new XMLHttpRequest();
+          let fd = new FormData();
+
+          xhr.open("POST", url, true);
+          xhr.setRequestHeader("X-Requested-With", "XMLHttpRequest");
+
+          xhr.onreadystatechange = (e) => {
+            if (xhr.readyState == 4 && xhr.status == 200) {
+              let urlFoto = JSON.parse(xhr.responseText).secure_url;
+              fotoContainer.src = urlFoto;
+              console.log(urlFoto);
+            }
+          };
+
+          fd.append("upload_preset", unsignedUploadPreset);
+          fd.append("file", archivo);
+          xhr.send(fd);
+        }
+      });
+    },
+
+    establecerMarcador(lugar) {
+      const coords = {
+        lat: lugar.geometry.location.lat(),
+        lng: lugar.geometry.location.lng(),
+      };
+
+      this.centro = coords;
+      this.marcador = coords;
+    },
+    obtenerCoord(marcador) {
+      const coords = {
+        lat: marcador.latLng.lat(),
+        lng: marcador.latLng.lng(),
+      };
+
+      this.centro = coords;
+      this.marcador = coords;
+
+      this.msjErrMap = false;
+      this.marcadorDragged = true;
+      document.getElementById("map-container").classList.remove("errorMapa");
+    },
+    posicionActual() {
+      navigator.geolocation.getCurrentPosition(
+        (posicion) => {
+          const coords = {
+            lat: posicion.coords.latitude,
+            lng: posicion.coords.longitude,
+          };
+          this.centro = coords;
+          this.marcador = coords;
+        },
+        (err) => {
+          const coords = {
+            lat: 9.90263460472791,
+            lng: -84.10152706627045,
+          };
+          this.centro = coords;
+          this.marcador = coords;
+        }
+      );
+    },
+  },
+};
+</script>
+
+<style>
+div.v-radio div.v-input--selection-controls__input {
+  margin-right: 2px;
+}
+div.v-radio div.v-input--selection-controls__input i.v-icon {
+  font-size: 18px;
+}
+
+img.foto_usuario {
+  border: 1px solid #cccccc;
+  border-radius: 4px;
+  height: 160px;
+  width: 160px;
+}
+span.btn_subirFoto {
+  width: 160px;
+  text-align: center;
+  display: inline-block;
+}
+</style>
