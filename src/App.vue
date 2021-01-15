@@ -7,9 +7,7 @@
       :btnRegresar="!btn"
       :redireccion="redireccion"
     />
-    <div class="page-header">
-      <Navegacion v-if="!nav" />
-    </div>
+    <Navegacion v-if="!nav" />
 
     <!-- Loader -->
     <div class="vld-parent">
@@ -107,15 +105,6 @@ export default {
 </script>
 
 <style>
-.page-header {
-  transition: 0.3s;
-}
-
-.page-header {
-  position: sticky;
-  z-index: 5;
-}
-
 /* Estilos de los formularios */
 /* Corrección de la posición del mensaje de error */
 div.v-text-field__details {

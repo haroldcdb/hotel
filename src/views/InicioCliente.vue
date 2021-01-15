@@ -12,11 +12,11 @@
           No hay hoteles para mostrar
         </div>
         <v-card
-          v-for="(hotel, index) in listaHotelesFiltrados"
-          :key="index"
+          v-for="(hotel, cardIndex) in listaHotelesFiltrados"
+          :key="cardIndex"
           elevation="3"
           width="100%"
-          :class="index != listaHotelesFiltrados.length - 1 ? 'mb-3' : ''"
+          :class="cardIndex != listaHotelesFiltrados.length - 1 ? 'mb-3' : ''"
         >
           <!-- @mouseover="mostrarInfoVentana(hotel, index)" -->
           <v-row>
@@ -28,8 +28,8 @@
                 style="border-radius: 4px"
               >
                 <v-carousel-item
-                  v-for="(imagen, index) in hotel.imagenes"
-                  :key="index"
+                  v-for="(imagen, imgIndex) in hotel.imagenes"
+                  :key="imgIndex"
                   :src="imagen.src"
                 >
                 </v-carousel-item>
@@ -57,13 +57,13 @@
                   small
                   text
                   outlined
-                  v-for="(tab, index2) in tabs"
-                  :key="index2"
-                  @click="mostrar(index, index2)"
+                  v-for="(tab, tabIndex) in tabs"
+                  :key="tabIndex"
+                  @click="mostrar(cardIndex, tabIndex)"
                 >
                   {{ tab }}
                   <v-icon class="pl-2" x-small>{{
-                    expInfo[index][index2].activo
+                    expInfo[cardIndex][tabIndex].estado
                       ? "fas fa-chevron-up"
                       : "fas fa-chevron-down"
                   }}</v-icon>
@@ -75,7 +75,7 @@
           <v-row>
             <v-col lg="12" class="p-0">
               <v-expand-transition>
-                <div v-show="expInfo[index][0].activo" class="mx-2">
+                <div v-show="expInfo[cardIndex][0].estado" class="mx-2">
                   <v-divider class="mx-4 mb-0"></v-divider>
                   <v-card-text>
                     I'm a thing. But, like most politicians, he promised more
@@ -88,13 +88,13 @@
                 </div>
               </v-expand-transition>
               <v-expand-transition>
-                <div v-show="expInfo[index][1].activo" class="mx-2">
+                <div v-show="expInfo[cardIndex][1].estado" class="mx-2">
                   <v-divider class="mx-4 mb-0"></v-divider>
                   <v-card-text> I'm a thing. </v-card-text>
                 </div>
               </v-expand-transition>
               <v-expand-transition>
-                <div v-show="expInfo[index][2].activo" class="mx-2">
+                <div v-show="expInfo[cardIndex][2].estado" class="mx-2">
                   <v-divider class="mx-4 mb-0"></v-divider>
                   <v-card-text>
                     I'm a thing. But, like most politicians, he promised more
@@ -104,7 +104,7 @@
                 </div>
               </v-expand-transition>
               <v-expand-transition>
-                <div v-show="expInfo[index][3].activo" class="mx-2">
+                <div v-show="expInfo[cardIndex][3].estado" class="mx-2">
                   <v-divider class="mx-4 mb-0"></v-divider>
                   <v-card-text>
                     I'm a thing. But, like most politicians, he promised more
@@ -129,12 +129,12 @@
             @click="abrirVentanaInfo = false"
           >
             <gmap-marker
-              v-for="(marcador, index) in marcadores"
-              :key="index"
+              v-for="(marcador, cardIndex) in marcadores"
+              :key="cardIndex"
               :position="marcador.posicion"
               :animation="4"
               :draggable="false"
-              @click="mostrarInfoVentana(marcador.hotel, index)"
+              @click="mostrarInfoVentana(marcador.hotel, cardIndex)"
             ></gmap-marker>
 
             <!-- :options="optInfo" -->
@@ -207,7 +207,7 @@ export default {
     for (let i = 0; i < this.listaHoteles.length; i++) {
       let array = [];
       for (let j = 0; j < 4; j++) {
-        array.push({ activo: false });
+        array.push({ estado: false });
       }
       this.expInfo.push(array);
     }
@@ -216,18 +216,18 @@ export default {
     this.scroll();
   },
   methods: {
-    mostrarInfoVentana(hotel, index) {
+    mostrarInfoVentana(hotel, cardIndex) {
       this.posVentanaInfo = { lat: hotel.lat, lng: hotel.lng };
       this.contenido = this.obtInfoVentana(hotel);
 
       // Se revisa si el marcador que fue seleccionado se volvió a cliquear
-      if (this.indexActual == index) {
+      if (this.indexActual == cardIndex) {
         this.abrirVentanaInfo = !this.abrirVentanaInfo;
       }
       // Si es otro marcador se reinicia el indice para abrir uno nuevo
       else {
         this.abrirVentanaInfo = true;
-        this.indexActual = index;
+        this.indexActual = cardIndex;
       }
     },
 
@@ -247,15 +247,15 @@ export default {
               </div>`;
     },
 
-    mostrar(index, index2) {
+    mostrar(cardIndex, tabIndex) {
       // Esto es para reiniciar el arreglo de objetos que controla los botones para que expandan o no
-      if (!this.expInfo[index][index2].activo) {
-        this.expInfo[index].splice(0, this.expInfo.length);
+      if (!this.expInfo[cardIndex][tabIndex].estado) {
+        this.expInfo[cardIndex].splice(0, this.expInfo.length);
         for (let j = 0; j < 4; j++) {
-          this.expInfo[index].push({ activo: false });
+          this.expInfo[cardIndex].push({ estado: false });
         }
       }
-      this.expInfo[index][index2].activo = !this.expInfo[index][index2].activo;
+      this.expInfo[cardIndex][tabIndex].estado = !this.expInfo[cardIndex][tabIndex].estado;
     },
     datosHoteles() {
       this.listaHoteles = hotelController.obtenerHoteles().hoteles;

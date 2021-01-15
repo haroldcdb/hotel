@@ -571,6 +571,14 @@ export default {
 
   mounted() {
     this.posicionActual();
+
+    // Para validar que el campo teléfono solo acepte números
+    const campo = document.getElementById("telefono");
+    campo.addEventListener("input", function (e) {
+      if (!/^[0-9]*$/.test(campo.value)) {
+        campo.value = campo.value.substring(0, campo.value.length - 1);
+      }
+    });
   },
 
   methods: {
@@ -771,7 +779,6 @@ export default {
 </script>
 
 <style>
-
 div.v-radio div.v-input--selection-controls__input {
   margin-right: 2px;
 }

@@ -29,6 +29,7 @@
 
     <v-navigation-drawer app v-model="navegacion" temporary dark>
       <template v-slot:prepend>
+        <!-- <v-btn x-small @click="navegacion = !navegacion">x</v-btn> -->
         <v-list-item two-line>
           <v-list-item-avatar>
             <img :src="foto" />
